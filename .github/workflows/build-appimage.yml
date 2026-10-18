@@ -1,0 +1,38 @@
+name: Build Linux AppImage
+
+on:
+  push:
+    branches:
+      - ci/appimage-build
+
+permissions:
+  contents: read
+
+jobs:
+  build-appimage:
+    name: Build x86_64 AppImage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Build the port
+        run: nix-shell shell.nix --run 'bash build.sh'
+
+      - name: Package the AppImage
+        run: bash packaging/appimage.sh
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bloodborne-bbport-x86_64-AppImage
+          path: dist/Bloodborne-bbport-x86_64.AppImage
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
